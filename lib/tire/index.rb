@@ -171,14 +171,16 @@ module Tire
       #     end
 
       payload = documents.map do |document|
-        type = get_type_from_document(document, :escape => false) # Do not URL-escape the _type
-        id   = get_id_from_document(document)
+        type     = get_type_from_document(document, :escape => false) # Do not URL-escape the _type
+        id       = get_id_from_document(document)
+        parent   = get_parent_from_document(document)
+				
 
         if ENV['DEBUG']
           STDERR.puts "[ERROR] Document #{document.inspect} does not have ID" unless id
         end
 
-        header = { action.to_sym => { :_index => name, :_type => type, :_id => id } }
+        header = { action.to_sym => { :_index => name, :_type => type, :_id => id, :parent => parent } }
 
         if document.respond_to?(:to_hash) && hash = document.to_hash
           meta = {}
@@ -478,6 +480,19 @@ module Tire
       $VERBOSE = old_verbose
       id
     end
+
+    def get_parent_from_document(document)
+      old_verbose, $VERBOSE = $VERBOSE, nil # Silence Object#id deprecation warnings
+      parent_id = case
+        when document.is_a?(Hash)
+          document[:parent] || document['parent']
+        when document.respond_to?(:parent)
+          document.parent
+      end
+      $VERBOSE = old_verbose
+      parent_id
+    end
+		
 
     def convert_document_to_json(document)
       document = case

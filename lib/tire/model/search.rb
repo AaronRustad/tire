@@ -145,7 +145,10 @@ module Tire
             if instance.destroyed?
               index.remove instance
             else
-              response = index.store( instance, {:percolate => percolator} )
+							options = {:percolate => percolator}
+							options[:parent] = instance.parent if instance.respond_to?(:parent)
+
+              response = index.store( instance, options )
               instance.tire.matches = response['matches'] if instance.tire.respond_to?(:matches=)
               self
             end
